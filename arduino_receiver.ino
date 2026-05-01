@@ -19,7 +19,6 @@ int tiltAngle = 90;
 
 const int warningLedPin = 8;
 bool isMotorHealthy = true;
-bool ledOverride = false;  // true when Python sent E1 (DANGER) — blocks diagnostic LOW
 
 void setup() {
   Serial.begin(9600);
@@ -49,9 +48,7 @@ void runDiagnostics(int targetAngle) {
     Serial.println("PREDICTION: High friction in Pan Gear. Failure likely in 14 days.");
   } else {
     isMotorHealthy = true;
-    if (!ledOverride) {          // don't turn off LED if Python set E1
-      digitalWrite(warningLedPin, LOW);
-    }
+    digitalWrite(warningLedPin, LOW);
   }
 }
 
@@ -66,11 +63,9 @@ void loop() {
       if (axis == 'E') {
         int errorState = command.substring(1).toInt();
         if (errorState == 1) {
-           ledOverride = true;
            digitalWrite(warningLedPin, HIGH);
            Serial.println("ALERT: (MANUAL OVERRIDE) - Motor Jam Predicted.");
         } else {
-           ledOverride = false;
            digitalWrite(warningLedPin, LOW);
            Serial.println("SYSTEM RESET: Motors healthy.");
         }
@@ -84,9 +79,11 @@ void loop() {
 
         if (axis == 'P' || axis == 'p') {
           panServo.write(angle);
+          Serial.print("Moved Pan to: "); Serial.println(angle);
         }
         else if (axis == 'T' || axis == 't') {
           tiltServo.write(angle);
+          Serial.print("Moved Tilt to: "); Serial.println(angle);
         }
       }
     }
